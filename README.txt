@@ -1,5 +1,6 @@
 This tool is designed to assist with drawing boundaries for federal redistributions.
 It is currently set up for the 2023 redistribution of Victoria into 38 divisions.
+If you want to use this tool for drawing boundaries in Victoria, just open redist.html. Otherwise, there are instructions to modify the setup at the end of this file.
 
 View mode:
 	Use the dropdown menu to highlight each division that you have proposed.
@@ -29,3 +30,19 @@ Edit mode:
 	The dropdown menu is highlighted according to the population in each division. A division name will remain red until both current and projected populations are within the required tolerances, when it will become green.
 
 	The Remaining divisions section contains information about divisions that are outside the required tolerances. It DOES NOT refresh automatically when you edit the division. It will only refresh when you click the Refresh this data button, or if you click on the dropdown menu. Monitor this data to ensure you don't draw too many divisions under or over.
+
+
+Using this tool for other states/territories:
+	Shapefiles for state districts, current divisions, SA1s and LGAs are needed. I have created compressed versions of these in the required format, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
+
+	You also need the enrolment data from the AEC. Different states are provided in different formats, so I have restructured the NSW, VIC and WA data into the same format. You can find them here:
+https://drive.google.com/drive/folders/13imHz6DYpsL32ULGg7z_yqWYNYU6Ip9U?usp=sharing
+
+	Move the four boundary files and enrolment data into the directory with processing.py. They need to be named as follows:
+		districtBoundaries.js
+		divisionBoundaries.js
+		LGABoundaries.js
+		SA1Boundaries.js
+		enrolment.csv
+
+	Run processing.py - you will need an installation of Python to do this. It will ask how many divisions you are drawing, and output two files: allocations.js and electorateSA1s.js. You can then open redist.html.

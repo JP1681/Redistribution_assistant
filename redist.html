@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base target="_top">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Redistribution assistant</title>
+
+	<!-- Leaflet imports -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+	<!-- Population data -->
+	<script src="electorateSA1s.js"></script>
+	<script src="allocations.js"></script>
+
+	<!-- Boundary data -->
+	<script src="divisionBoundaries.js" ></script> 
+	<script src="SA1Boundaries.js"></script>
+	<script src="districtBoundaries.js"></script>
+	<script src="LGABoundaries.js"></script>
+
+	<style>
+		html, body {height: 100%; margin: 0;}
+		.leaflet-container {height: 600px;width: 800px;max-width: 100%;max-height: 100%;}
+	</style>
+
+</head>
+<body>
+<div style="width: 20%; height:100%; float:left">
+	<button title="Switch between view mode and edit mode" id="modeChange" onclick="changeMode()">Go to edit mode</button>
+	<br><br>
+	<div id="viewOnly">
+		<select title="View a proposed division" id="viewDivisionName" onchange="loadViewDivision()"></select>
+		<br><br>
+		<button title="Show population heatmap: current, projected and growth" id="showHeatmap" onclick="nextHeatmap()">Heatmap: None</button>
+		<br><br>
+		<button title="Click the download link, then find the existing allocations.js file and overwrite it." id="saveButton" onclick="saveAllocationJS()">Save progress</button>
+		<a download="allocations.js" id="downloadJSlink" title="Make sure you have pressed the Save button" href="">Download</a>
+		<br><br>
+		<button title="Click the download link, then save the file." id="allocationReport" onclick="saveAllocationCSV()">Generate allocation .csv</button>
+		<br>
+		<a download="allocations.csv" id="downloadCSVlink" title="Make sure you have pressed the Generate button" href="">Download</a>
+		</div>
+	<div id="editOnly" hidden>
+		<label for="divisionName">Division:</label>
+		<select id="divisionName" onchange="loadEditDivision()" onfocus="refreshQuotaValidity()"></select>
+		<input id="divNameTB" type="text"><button id="updateDivName" onclick="changeDivisionName()">Change name</button>
+		<br><br>
+		<button title="Add/remove by SA1/2/3/4" id="switchSALevel" onclick="changeSALevel()">SA1</button><input type="checkBox" id="lockSA1s" checked>Lock SA1s that are already allocated</input>
+		<br><br>
+		<b id="currDivPop">Current: 0/0 (0%)</b>
+		<br><br>
+		<b id="projDivPop">Projected: 0/0 (0%)</b>
+		<br><br>
+		<b>Remaining divisions</b><br>
+		<p id="quota1">There are 0 divisions outside the required tolerances. There are 0 current electors and 0 projected electors to be split between them.</p>
+		<p id="quota2">This is an average of 0 (current) and 0 (projected) electors per division.</p>
+		<p id="quota3">This differs from the quotas by 0% (current) and 0% (projected).</p>
+		<button title="refreshQuotaButton" onclick="refreshQuotaValidity()">Refresh this data</button>
+	</div>
+	<div id="toggleBoundaries">
+		<br>
+		<input type="checkbox" id="showDivisions" onchange="toggleBoundary('showDivisions')"></input><label for="showDivisions" style="background-color: #AFAFFF">Show current divisions</label>
+		<br>
+		<input type="checkbox" id="showLGAs" onchange="toggleBoundary('showLGAs')"></input><label for="showLGAs" style="background-color: #FFFFAF">Show local government areas</label>
+		<br>
+		<input type="checkbox" id="showDistricts" onchange="toggleBoundary('showDistricts')"></input><label for="showDistricts" style="background-color: #FFAFFF">Show state districts</label>
+	</div>
+</div>
+<div id="map" style="width: 80%; height: 100%;"></div>
+
+<script>
+	rgb = function(values) {
+		return 'rgb(' + values.join(", ") + ")";
+	}
+	let defaultSA1Col = rgb([0,0,0]);
+	let allocatedSA1Col = rgb([255,0,0]);
+	let defaultDivisionCol = rgb([0,0,255]);
+	let defaultLGACol = rgb([255,255,0]);
+	let defaultDistrictCol = rgb([255,0,255]);
+	const map = L.map('map').setView([-32, 151], 6);
+
+	let SA1Style = {"color":defaultSA1Col,"weight":1,"opacity":1,"fillOpacity":0.3};
+	let divisionStyle = {"color":defaultDivisionCol,"weight":4,"opacity":0.5,"fillOpacity":0};
+	let LGAStyle = {"color":defaultLGACol,"weight":4,"opacity":0.5,"fillOpacity":0};
+	let districtStyle = {"color":defaultDistrictCol,"weight":4,"opacity":0.5,"fillOpacity":0};
+	let hiddenStyle = {"opacity":0,"fillOpacity":0};
+
+	const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		maxZoom: 19,
+		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+	}).addTo(map);
+
+	let districtLayer = new L.GeoJSON(districtBoundaries,{style:districtStyle});
+	districtLayer.addTo(map);
+	let LGALayer = new L.GeoJSON(LGABoundaries,{style:LGAStyle});
+	LGALayer.addTo(map);
+	let divisionLayer = new L.GeoJSON(divisionBoundaries,{style:divisionStyle});
+	divisionLayer.addTo(map);
+	let SA1Layer = new L.GeoJSON(SA1Boundaries,{style:SA1Style});
+	SA1Layer.addTo(map);
+
+
+	let SA1Array = Object.keys(allocations["Actual"]);
+	let SA1IDmap = {};
+	let divisionIDmap={};
+	SA1Q = function(num){
+		return SA1Layer.getLayer(SA1IDmap[num]);
+	}
+	divQ = function(divName){
+		return divisionLayer.getLayer(divisionIDmap[divName]);
+	}
+	let extCurrent = allocations["CurrentExtreme"]; //min, max
+	let extProj = allocations["ProjectedExtreme"];
+	let extGrowth = allocations["ChangeExtreme"];
+	let currentPopulation = parseInt(allocations["Totals"][0]);
+	let projPopulation = parseInt(allocations["Totals"][1]);
+
+	let nDivisions = Object.keys(allocations["Names"]).length;
+	let currentQuota = Math.round(currentPopulation/nDivisions);
+	let projQuota = Math.round(projPopulation/nDivisions);
+	let currentTolerance = 0.1;
+	let projTolerance = 0.035;
+	let lastEditedDiv = 0;
+
+	divisionLayer.eachLayer(function (layer){
+			divisionIDmap[layer["feature"]["properties"]["CED_NAME21"].toUpperCase()]=divisionLayer.getLayerId(layer);
+	});
+	SA1Layer.eachLayer(function (layer){
+			SA1IDmap[layer["feature"]["properties"]["SA1_CODE21"]]=SA1Layer.getLayerId(layer);
+	});
+
+
+	SA1Layer.on("click", function(l){onLayerClick(l.layer)});
+	SA1Layer.on("contextmenu",function(l){onLayerDoubleClick(l.layer)});
+	currTotal = 0;
+	projTotal = 0;
+
+	heatmapIndex = 0;
+	let hmButtonArray = ["None","Current (log10 scale)","Projected (log10 scale)","Growth"];
+	let modeArray = ["edit mode","view mode"];
+	let modeIndex = 0;
+
+	let SAArray = ["1","2","3","4"];
+	let SAIndex = 0;
+	let SAdepthArray = [11,9,5,3];
+
+	divDD = document.getElementById("divisionName");
+	VdivDD = document.getElementById("viewDivisionName");
+	for (let i=0; i<nDivisions; i++){
+		optT = String(i)+": "+allocations["Names"][String(i)];
+		option = document.createElement("option");
+		option.id = "edit"+String(i);
+		option.value = i;
+		option.text = optT;
+		option.style.backgroundColor = "#FFFFFF";
+		divDD.add(option);
+	};
+	option = document.createElement("option");
+	option.value = -1;
+	option.text = "None";
+	VdivDD.add(option);
+	for (let i=0; i<nDivisions; i++){
+		optT = String(i)+": "+allocations["Names"][String(i)];
+		option = document.createElement("option");
+		option.value = i;
+		option.id = "view"+String(i);
+		option.text = optT;
+		VdivDD.add(option);
+	};
+
+	SA1Layer.eachLayer(function (layer){
+			layerName = layer["feature"]["properties"]["SA1_CODE21"];
+			layer.bindTooltip("ID: "+layerName+
+				" Current: "+String(allocations["Actual"][layerName])+
+				" Projected: "+String(allocations["Projected"][layerName])+
+				" Growth: "+String(Math.round(allocations["Change"][layerName]*10000)/100)+"%")
+		});
+	let toggleLayerMapping = {"showDivisions":divisionLayer, "showLGAs":LGALayer,"showDistricts":districtLayer};
+	let toggleStyleMapping = {"showDivisions":divisionStyle,"showLGAs":LGAStyle,"showDistricts":districtStyle};
+	let toggleLayerKeys = Object.keys(toggleLayerMapping);
+	for (i=0;i<toggleLayerKeys.length;i++){
+		document.getElementById(toggleLayerKeys[i]).checked = true;
+	};
+	toggleBoundary = function(buttonName){
+		box = document.getElementById(buttonName);
+		layerOn = box.checked;
+		if (layerOn){
+			toggleLayerMapping[buttonName].eachLayer(function (layer){layer.setStyle(toggleStyleMapping[buttonName])});
+		}
+		else {
+			toggleLayerMapping[buttonName].eachLayer(function (layer){layer.setStyle(hiddenStyle)});
+		}
+	};
+	checkMatchDepth = function(a,b,matchDepth){
+		return a.substring(0,matchDepth)==b.substring(0,matchDepth)
+	};
+	onLayerClick = function(layer){
+		if (modeIndex == 1){
+			let lockTrue = document.getElementById("lockSA1s").checked;
+			let divDD = document.getElementById("divisionName");
+			let selectedDiv = divDD.value;
+			if (!layer.hasOwnProperty("feature")){
+				layer = SA1Layer.getLayer(parseInt(Object.keys(layer["_eventParents"])[0]));
+			};
+			let layerID = layer["feature"]["properties"]["SA1_CODE21"];
+			let n = allocations["Division"][layerID];
+			d = SAdepthArray[SAIndex];
+			if (!lockTrue || n==-1 || n==selectedDiv){
+				let addSA1s = 0;
+				if (n!=selectedDiv){addSA1s = 1} else {addSA1s = -1};
+				SA1Layer.eachLayer(function(Llayer){
+					let LlayerID = Llayer["feature"]["properties"]["SA1_CODE21"];
+					if (checkMatchDepth(layerID,LlayerID,d)){
+						let Ln = allocations["Division"][LlayerID];
+						if (!lockTrue || Ln == selectedDiv || Ln == -1){
+							let newSA1Col = "";
+							let newAllocation = -2;
+							if (addSA1s==1){
+								newAllocation = selectedDiv;
+								newSA1Col = "#00FF00";
+							} else {
+								newAllocation = -1;
+								newSA1Col = "#000000";
+							}
+							if (Ln != newAllocation){
+								allocations["Division"][LlayerID] = newAllocation;
+								currTotal += addSA1s * allocations["Actual"][LlayerID];
+								projTotal += addSA1s * allocations["Projected"][LlayerID];
+								Llayer.setStyle({color:newSA1Col});
+							}		
+						}
+					}
+				})
+			}
+			displayPopulation(currTotal,projTotal);
+		}
+	};
+	onLayerDoubleClick = function(layer){
+		if (modeIndex==1){
+			let lockTrue = document.getElementById("lockSA1s").checked;
+			if (!layer.hasOwnProperty("feature")){
+				layer = SA1Layer.getLayer(parseInt(Object.keys(layer["_eventParents"])[0]));
+			};
+			let layerID = layer["feature"]["properties"]["SA1_CODE21"];
+			let n = allocations["Division"][layerID];
+			if (n!=-1){
+				divDD = document.getElementById("divisionName");
+				divDD.value = n;
+				loadEditDivision();
+			}
+		}
+	};
+	refreshPopulation = function(){
+		divDD = document.getElementById("divisionName");
+		selectedDiv = divDD.value;
+		let cT = 0;
+		let pT = 0;
+		for (let i=0;i<SA1Array.length;i++){
+			let s = SA1Array[i];
+			if (allocations["Division"][s]==selectedDiv){
+				cT += allocations["Actual"][s];
+				pT += allocations["Projected"][s];
+			}
+		}
+		displayPopulation(cT,pT);
+	};
+	refreshQuotaValidity = function(){
+		let currPopArray = Array(nDivisions).fill(0);
+		let projPopArray = Array(nDivisions).fill(0);
+		for (let i = 0; i < SA1Array.length; i++){
+			SA1ID = SA1Array[i];
+			divID = allocations["Division"][SA1ID];
+			if (divID != -1){
+				currPopArray[divID] = currPopArray[divID] + allocations["Actual"][SA1ID];
+				projPopArray[divID] = projPopArray[divID] + allocations["Projected"][SA1ID];
+			}
+		};
+		let quotaValid = false;
+		let optionColor = "";
+		let invalidDivisions = 0;
+		let currPopInValidDivisions = 0;
+		let projPopInValidDivisions = 0;
+		for (let i = 0; i < nDivisions; i++){
+			quotaValid = checkWithinTolerance(currPopArray[i]/currentQuota,currentTolerance) && checkWithinTolerance(projPopArray[i]/projQuota,projTolerance);
+			if (quotaValid){
+				optionColor = "#AFFFAF";
+				currPopInValidDivisions += currPopArray[i];
+				projPopInValidDivisions += projPopArray[i];
+			} else {
+				optionColor = "#FFAFAF";
+				invalidDivisions += 1;
+			};
+			currPopNotInValidDivisions = currentPopulation - currPopInValidDivisions;
+			projPopNotInValidDivisions = projPopulation - projPopInValidDivisions;
+			if (invalidDivisions!=0){
+				document.getElementById("quota1").textContent="There are "+String(invalidDivisions)+
+					" divisions outside the required tolerances. There are "+String(currPopNotInValidDivisions)+
+					" current electors and "+String(projPopNotInValidDivisions)+" projected electors to be split between them.";
+				currAverage = currPopNotInValidDivisions/invalidDivisions;
+				projAverage = projPopNotInValidDivisions/invalidDivisions;
+				document.getElementById("quota2").textContent="This is an average of "+String(Math.round(currAverage))+
+					" (current) and "+String(Math.round(projAverage))+
+					" (projected) electors per division.";
+				currDeviation = Math.round(10000*(currAverage/currentQuota-1))/100;
+				projDeviation = Math.round(10000*(projAverage/projQuota-1))/100;
+				document.getElementById("quota3").textContent="This differs from the quotas by "+String(currDeviation)+
+					"% (current) and "+String(projDeviation)+"% (projected).";
+			}
+			else {
+				document.getElementById("quota1").textContent = "There are no divisions outside the required tolerances.";
+				document.getElementById("quota2").textContent = "";
+				document.getElementById("quota3").textContent = "";
+			}
+			
+			document.getElementById("edit"+String(i)).style.backgroundColor=optionColor;
+		};
+	};
+	checkWithinTolerance = function(ratio,tolerance){
+		return Math.abs(ratio-1)<tolerance
+	};
+	displayPopulation = function(curr,proj){
+		divDD = document.getElementById("divisionName");
+		selectedDiv = divDD.value;
+		currText = document.getElementById("currDivPop");
+		projText = document.getElementById("projDivPop");
+		currR = curr/currentQuota;
+		projR = proj/projQuota;
+		currText.textContent = "Current: "+String(Math.round(curr))+
+			"/"+String(currentQuota)+" ("+
+			String(Math.round(currR*10000)/100)+"%)";
+		projText.textContent = "Projected: "+String(Math.round(proj))+
+			"/"+String(projQuota)+" ("+
+			String(Math.round(projR*10000)/100)+"%)";
+		if (checkWithinTolerance(currR,currentTolerance)){
+			highlight = "#AFFFAF";
+		} else {
+			highlight = "#FFAFAF";
+		}
+		currText.style.backgroundColor = highlight;
+		if (checkWithinTolerance(projR,projTolerance)){
+			highlight = "#AFFFAF";
+		} else {
+			highlight = "#FFAFAF";
+		}
+		projText.style.backgroundColor = highlight;
+		currTotal = curr;
+		projTotal = proj;
+	};
+	heatmapColour = function(minmax,value,colMin,colMax){
+		scalar = (value-minmax[0])/(minmax[1]-minmax[0]);
+		for (let i = 0; i<3; i++){
+			colMin[i] += (colMax[i]-colMin[i]) * scalar;
+		}
+		return rgb(colMin);
+	};
+	resetView = function(){
+		SA1Layer.eachLayer(function(layer){layer.setStyle(SA1Style)})
+	};
+	nextHeatmap = function (){
+		heatmapIndex = (heatmapIndex + 1) % 4;
+		VdivDD = document.getElementById("viewDivisionName");
+		VdivDD.value = -1;
+		resetView();
+		hmButton = document.getElementById("showHeatmap");
+		hmButton.textContent = "Heatmap: " + hmButtonArray[heatmapIndex];
+		if (heatmapIndex==0){
+				resetView();
+			}
+		else {
+			SA1Layer.eachLayer(function (layer){
+				n = layer["feature"]["properties"]["SA1_CODE21"];
+				if (heatmapIndex==1){
+					layer.setStyle({color:heatmapColour(extCurrent,Math.log10(allocations["Actual"][n]+1),[255,0,0],[0,255,0])})
+				}
+				else if (heatmapIndex==2){
+					layer.setStyle({color:heatmapColour(extProj,Math.log10(allocations["Projected"][n]+1),[255,0,0],[0,255,0])})
+				}
+				else if (heatmapIndex==3){
+					layer.setStyle({color:heatmapColour(extGrowth,allocations["Change"][n],[255,0,0],[0,255,0])})
+				}
+			})
+		}
+	};
+	changeMode = function(){
+		modeIndex = (modeIndex + 1) % 2;
+		swModeButton = document.getElementById("modeChange");
+		swModeButton.textContent = "Go to "+modeArray[modeIndex];
+		viewDiv = document.getElementById("viewOnly");
+		editDiv = document.getElementById("editOnly");
+		heatmapIndex=3;
+		nextHeatmap();
+		if (modeIndex == 0){
+			editDiv.style.display="none";viewDiv.style.display="block";
+		}
+		else if (modeIndex == 1){
+			viewDiv.style.display="none";editDiv.style.display="block";
+			loadEditDivision();
+		};
+	};	
+	var textFile = null;
+	makeTextFile = function (text) {
+		var data = new Blob([text], {type: 'text/plain'});
+		if (textFile !== null) {
+		window.URL.revokeObjectURL(textFile);
+		}
+		textFile = window.URL.createObjectURL(data);
+		return textFile;
+	};
+	loadEditDivision = function () {
+		divDD = document.getElementById("divisionName");
+		nameBox = document.getElementById("divNameTB");
+		selectedDiv = divDD.value;
+		nameBox.value = allocations["Names"][String(selectedDiv)];
+		SA1Layer.eachLayer(function (layer){
+			let s = layer["feature"]["properties"]["SA1_CODE21"];
+			let n = allocations["Division"][s];
+			if (n==-1){divCol = "#000000"}
+			else if (n==selectedDiv){divCol = "#00FF00"}
+			else {divCol = "#FF0000"};
+			layer.setStyle({color:divCol})
+		});
+		refreshPopulation();
+		refreshQuotaValidity();
+	};
+	loadViewDivision = function(){
+		divDD = document.getElementById("viewDivisionName");
+		selectedDiv = divDD.value;
+		resetView();
+		if (selectedDiv >= 0){
+			SA1Layer.eachLayer(function (layer){layer.setStyle({opacity:0});
+				let s = layer["feature"]["properties"]["SA1_CODE21"];
+				if (allocations["Division"][s]==selectedDiv){
+					SA1Q(s).setStyle({fillOpacity:0,opacity:0.3});
+				}
+			})
+		}
+	};
+	changeSALevel = function(){
+		SAIndex = (SAIndex+1)%4;
+		SAButton = document.getElementById("switchSALevel");
+		SAButton.textContent = "SA"+SAArray[SAIndex];
+	};
+	changeDivisionName = function(){
+		nameBox = document.getElementById("divNameTB");
+		newName = nameBox.value;
+		newNameID = document.getElementById("divisionName").value;
+		allocations["Names"][String(newNameID)] = newName;
+		optT = String(newNameID)+": "+newName;
+		optV = document.getElementById("view"+String(newNameID));
+		optV.text = optT;
+		optE = document.getElementById("edit"+String(newNameID));
+		optE.text = optT;
+	};
+	document.onkeydown = function(e){
+		if (e.key == "Enter"){
+			if (modeIndex == 1){
+				changeDivisionName();
+			}
+		}
+	};
+	saveAllocationJS = function(){
+		var link = document.getElementById('downloadJSlink');
+		link.href = makeTextFile("var allocations = " + JSON.stringify(allocations));
+	};
+	saveAllocationCSV = function(){
+		var link = document.getElementById('downloadCSVlink');
+		var csvString = "ID,Division";
+		for (let i = 0; i < SA1Array.length; i++){
+			var SA1ID = SA1Array[i];
+			var divID = allocations["Division"][SA1ID];
+			var name = "";
+			if (divID != -1){
+				name = allocations["Names"][String(divID)];
+			};
+			csvString += "\n"+SA1ID+","+name;
+		};
+		link.href = makeTextFile(csvString);
+	};
+</script>
+</body>
+</html>

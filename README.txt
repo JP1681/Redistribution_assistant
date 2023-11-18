@@ -27,18 +27,20 @@ Edit mode:
 
 	Click the SA1 button to move to SA2/3/4. For example, if SA3 is selected, clicking an SA1 will add/remove all other SA1s in that SA3.
 
+	Select the Lock SA1s checkbox to lock SA1s that are already in a different division.
+
 	The dropdown menu is highlighted according to the population in each division. A division name will remain red until both current and projected populations are within the required tolerances, when it will become green.
 
 	The Remaining divisions section contains information about divisions that are outside the required tolerances. It DOES NOT refresh automatically when you edit the division. It will only refresh when you click the Refresh this data button, or if you click on the dropdown menu. Monitor this data to ensure you don't draw too many divisions under or over.
 
 
 Using this tool for other states/territories:
-	Shapefiles for state districts, current divisions, SA1s and LGAs are needed. I have created compressed versions of these in the required format, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
+	Shapefiles for state districts, current divisions, SA1s and LGAs are needed. I have created compressed and non-compressed versions of these in the required format, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
 
 	You also need the enrolment data from the AEC. Different states are provided in different formats, so I have restructured the NSW, VIC and WA data into the same format. You can find them here:
 https://drive.google.com/drive/folders/13imHz6DYpsL32ULGg7z_yqWYNYU6Ip9U?usp=sharing
 
-	Move the four boundary files and enrolment data into the directory with processing.py. They need to be named as follows:
+	Pick the four boundary files that you want to use, then move them and the corresponding enrolment data into the directory with processing.py. They need to be named as follows:
 		districtBoundaries.js
 		divisionBoundaries.js
 		LGABoundaries.js

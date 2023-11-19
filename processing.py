@@ -23,7 +23,7 @@ with open(dir_name+"\\electorateSA1s.js","w") as file:
 populationData = SA1data[["SA1","Actual","Projected"]]
 populationData = populationData.groupby("SA1").sum()
 populationData["Change"]=populationData["Projected"]/populationData["Actual"]-1
-populationData["Change"][populationData["Change"].isna()]=0
+populationData["Change"]=populationData["Change"].fillna(0)
 populationData["Division"]=-1
 populationData.Division = populationData.Division.astype("int32")
 

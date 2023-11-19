@@ -226,15 +226,13 @@
 							}
 							if (Ln != newAllocation){
 								allocations["Division"][LlayerID] = newAllocation;
-								currTotal += addSA1s * allocations["Actual"][LlayerID];
-								projTotal += addSA1s * allocations["Projected"][LlayerID];
 								Llayer.setStyle({color:newSA1Col});
 							}		
 						}
 					}
 				})
 			}
-			displayPopulation(currTotal,projTotal);
+			refreshPopulation();
 		}
 	};
 	onLayerDoubleClick = function(layer){

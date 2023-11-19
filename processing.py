@@ -6,7 +6,7 @@ import pandas as pd
 import os
 dir_name = os.path.dirname(os.path.realpath(__file__))
 
-SA1data = pd.read_csv(dir_name+"\enrolment.csv")
+SA1data = pd.read_csv(dir_name+"\\enrolment.csv")
 SA1data.columns=["Current", "SA2 code", "SA2 name", "SA1", "SA1 code", "Actual", "Projected", "Growth"]
 SA1data.drop(["SA2 code", "SA2 name", "SA1 code","Growth"],axis=1,inplace=True)
 SA1data.dropna(inplace=True)

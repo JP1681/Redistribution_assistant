@@ -47,6 +47,6 @@ https://drive.google.com/drive/folders/13imHz6DYpsL32ULGg7z_yqWYNYU6Ip9U?usp=sha
 		SA1Boundaries.js
 		enrolment.csv
 
-	Make sure Python is installed. You also need to install numpy - go to the command prompt and run 'pip install numpy'.
+	Make sure Python is installed.
 
-	Run processing.py. It will ask how many divisions you are drawing, and output two files: allocations.js and electorateSA1s.js. You can then open redist.html.
+	Run the batch file switchStates.bat. It will ensure numpy is installed, then ask how many divisions you are drawing, and output two files: allocations.js and electorateSA1s.js. You can then open redist.html.

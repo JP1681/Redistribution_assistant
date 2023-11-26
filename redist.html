@@ -146,6 +146,20 @@
 	let SAIndex = 0;
 	let SAdepthArray = [11,9,5,3];
 
+	let SAStructure = {};
+	for (let j=1; j<SAArray.length;j++){
+		let SAid = SAArray[j];
+		SAStructure[SAid]={};
+		for (let i=0; i<SA1Array.length; i++){
+			let SA = SA1Array[i];
+			let SAkey = SA.substring(0,SAdepthArray[j]);
+			if (SAStructure[SAid][SAkey] == undefined){
+				SAStructure[SAid][SAkey] = [];
+			};
+			SAStructure[SAid][SAkey].push(SA);
+		};
+	};
+
 	divDD = document.getElementById("divisionName");
 	VdivDD = document.getElementById("viewDivisionName");
 	for (let i=0; i<nDivisions; i++){
@@ -193,9 +207,6 @@
 			toggleLayerMapping[buttonName].eachLayer(function (layer){layer.setStyle(hiddenStyle)});
 		}
 	};
-	checkMatchDepth = function(a,b,matchDepth){
-		return a.substring(0,matchDepth)==b.substring(0,matchDepth)
-	};
 	onLayerClick = function(layer){
 		if (modeIndex == 1){
 			let lockTrue = document.getElementById("lockSA1s").checked;
@@ -210,27 +221,31 @@
 			if (!lockTrue || n==-1 || n==selectedDiv){
 				let addSA1s = 0;
 				if (n!=selectedDiv){addSA1s = 1} else {addSA1s = -1};
-				SA1Layer.eachLayer(function(Llayer){
-					let LlayerID = Llayer["feature"]["properties"]["SA1_CODE21"];
-					if (checkMatchDepth(layerID,LlayerID,d)){
-						let Ln = allocations["Division"][LlayerID];
-						if (!lockTrue || Ln == selectedDiv || Ln == -1){
-							let newSA1Col = "";
-							let newAllocation = -2;
-							if (addSA1s==1){
-								newAllocation = selectedDiv;
-								newSA1Col = "#00FF00";
-							} else {
-								newAllocation = -1;
-								newSA1Col = "#000000";
-							}
-							if (Ln != newAllocation){
-								allocations["Division"][LlayerID] = newAllocation;
-								Llayer.setStyle({color:newSA1Col});
-							}		
+				let changeList = [];
+				if (SAIndex == 0){
+					changeList = [layerID];
+				} else {
+					changeList = SAStructure[SAArray[SAIndex]][layerID.substring(0,SAdepthArray[SAIndex])];
+				};
+				for (let i = 0; i<changeList.length; i++){
+					LlayerID = changeList[i];
+					let Ln = allocations["Division"][LlayerID];
+					if (!lockTrue || Ln == selectedDiv || Ln == -1){
+						let newSA1Col = "";
+						let newAllocation = -2;
+						if (addSA1s==1){
+							newAllocation = selectedDiv;
+							newSA1Col = "#00FF00";
+						} else {
+							newAllocation = -1;
+							newSA1Col = "#000000";
 						}
+						if (Ln != newAllocation){
+							allocations["Division"][LlayerID] = newAllocation;
+							SA1Q(LlayerID).setStyle({color:newSA1Col});
+						}		
 					}
-				})
+				}
 			}
 			refreshPopulation();
 		}
@@ -268,8 +283,8 @@
 		let currPopArray = Array(nDivisions).fill(0);
 		let projPopArray = Array(nDivisions).fill(0);
 		for (let i = 0; i < SA1Array.length; i++){
-			SA1ID = SA1Array[i];
-			divID = allocations["Division"][SA1ID];
+			let SA1ID = SA1Array[i];
+			let divID = allocations["Division"][SA1ID];
 			if (divID != -1){
 				currPopArray[divID] = currPopArray[divID] + allocations["Actual"][SA1ID];
 				projPopArray[divID] = projPopArray[divID] + allocations["Projected"][SA1ID];

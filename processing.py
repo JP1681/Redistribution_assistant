@@ -2,11 +2,17 @@ import json
 import math
 import numpy as np
 import pandas as pd
-
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
 import os
 dir_name = os.path.dirname(os.path.realpath(__file__))
+root = tk.Tk()
+root.withdraw()
 
-SA1data = pd.read_csv(dir_name+"\\enrolment.csv")
+tk.messagebox.showinfo(title="Please select a file",message="Please use the next screen to select the .csv file containing the enrolment data.")
+file_path = filedialog.askopenfilename()
+SA1data = pd.read_csv(file_path)
 SA1data.columns=["Current", "SA2 code", "SA2 name", "SA1", "SA1 code", "Actual", "Projected", "Growth"]
 SA1data.drop(["SA2 code", "SA2 name", "SA1 code","Growth"],axis=1,inplace=True)
 SA1data.dropna(inplace=True)

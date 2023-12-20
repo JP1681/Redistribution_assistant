@@ -15,10 +15,10 @@ SA1data.Actual=SA1data.Actual.astype("int32")
 SA1data.Projected=SA1data.Projected.astype("int32")
 SA1data.SA1=SA1data.SA1.astype("int64")
 
-electorateData = SA1data[["Current","SA1"]]
-outjs="var elecToSA1 = "+electorateData.groupby('Current').agg(list).to_json()
-with open(dir_name+"\\electorateSA1s.js","w") as file:
-    file.write(outjs)
+#electorateData = SA1data[["Current","SA1"]]
+#outjs="var elecToSA1 = "+electorateData.groupby('Current').agg(list).to_json()
+#with open(dir_name+"\\electorateSA1s.js","w") as file:
+#    file.write(outjs)
 
 populationData = SA1data[["SA1","Actual","Projected"]]
 populationData = populationData.groupby("SA1").sum()

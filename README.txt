@@ -40,13 +40,13 @@ Using this tool for other states/territories:
 	You also need the enrolment data from the AEC. Different states are provided in different formats, so I have restructured the NSW, VIC and WA data into the same format. You can find them here:
 https://drive.google.com/drive/folders/13imHz6DYpsL32ULGg7z_yqWYNYU6Ip9U?usp=sharing
 
-	Pick the four boundary files that you want to use, then move them and the corresponding enrolment data into the directory with processing.py. They need to be named as follows:
+	Pick four boundary files and the corresponding enrolment data. The four files go into the shapefiles folder, named as follows:
 		districtBoundaries.js
 		divisionBoundaries.js
 		LGABoundaries.js
 		SA1Boundaries.js
-		enrolment.csv
+	The enrolment data goes in the original directory, and should be called enrolment.csv.
 
 	Make sure Python is installed.
 
-	Run the batch file switchStates.bat. It will ensure numpy is installed, then ask how many divisions you are drawing, and output two files: allocations.js and electorateSA1s.js. You can then open redist.html.
+	Run the batch file switchStates.bat. It will ensure numpy is installed, ask how many divisions you are drawing, and output one file (allocations.js). You can then open redist.html.

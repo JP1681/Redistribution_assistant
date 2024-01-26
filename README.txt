@@ -35,16 +35,13 @@ Edit mode:
 
 
 Using this tool for other states/territories:
-	Make sure Python is installed.
+	Install Python, if you don't have it already.
 
 	Shapefiles for state districts, current divisions, SA1s and LGAs are needed. I have created compressed and non-compressed versions of these in the required format, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
 
-	You also need the enrolment data from the AEC. Different states are provided in different formats, so I have coerced the NSW, VIC and WA data into the same format. You can find them here:
-https://drive.google.com/drive/folders/13imHz6DYpsL32ULGg7z_yqWYNYU6Ip9U?usp=sharing
+	You also need the enrolment data from the AEC. Of the two Excel files available, pick the one that does NOT end with "by Division". There is no need to convert to .csv format.
 	
 	Select the boundary files you want to use, and save them in the shapefiles folder.
-	You should save the corresponding enrolment data in the main directory.
 
-	Run the batch file switchStates.bat. It will ensure numpy is installed, then ask how many divisions you are drawing.
-	You will then be asked to select the files containing enrolment data and SA1 boundaries. 
+	Run the batch file switchStates.bat. It will ensure numpy and openpyxl are installed. Then, you need to select the file containing enrolment data. It will ask you to identify which columns contain SA1 codes and population estimates, then ask how many divisions you are drawing.
 	The program will create one file (allocations.js). You can then open redist.html.

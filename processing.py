@@ -10,13 +10,46 @@ dir_name = os.path.dirname(os.path.realpath(__file__))
 root = tk.Tk()
 root.withdraw()
 
-tk.messagebox.showinfo(title="Please select a file",message="Please use the next screen to select the .csv file containing the enrolment data.")
-file_path = filedialog.askopenfilename()
-SA1data = pd.read_csv(file_path)
-SA1data.columns=["Current", "SA2 code", "SA2 name", "SA1", "SA1 code", "Actual", "Projected", "Growth"]
-SA1data.drop(["SA2 code", "SA2 name", "SA1 code","Growth"],axis=1,inplace=True)
+tk.messagebox.showinfo(title="Please select a file",message="Please use the next screen to select the .csv/xlsx file containing the enrolment data.")
+while True:
+    file_path = filedialog.askopenfilename()
+    if file_path[-4:]==".csv":
+        SA1data = pd.read_csv(file_path)
+        break
+    elif file_path[-5:]==".xlsx":
+        SA1data = pd.read_excel(file_path)
+        break
+    else:
+        tk.messagebox.showinfo(title="Wrong file type",message="Please select either a .csv or .xlsx file.")
+
+
+for i in range(len(SA1data.columns)):
+    print("Column "+str(i)+": "+SA1data.columns[i]+str(list(SA1data[SA1data.columns[i]].head())))
+    print()
+print("Each column of the .csv file is shown above, along with the first few entries.")
+questionSuffixes = ["SA1 codes (10-digit numbers, possibly with .0)","current enrolment numbers","projected enrolment numbers"]
+newColumnNames = ["SA1","Actual","Projected"]
+columnNumbers = []
+for i in range(len(questionSuffixes)):
+    valid = False
+    while not valid:
+        newNum = input("What number is the column containing " + questionSuffixes[i] + "? ")
+        try:
+            newNum = int(newNum)
+            if (newNum < 0) or (newNum >= len(SA1data.columns)):
+                print("Please enter a valid column number.")
+            else:
+                if newNum in columnNumbers:
+                    print("You have already entered that number.")
+                else:
+                    columnNumbers.append(newNum)
+                    valid = True
+        except:
+            print("Please enter an integer.")
+SA1data=SA1data.iloc[:,columnNumbers]
+SA1data.columns=newColumnNames
 SA1data.dropna(inplace=True)
-SA1data["Current"]=SA1data["Current"].str.strip()
+#SA1data["Current"]=SA1data["Current"].str.strip()
 SA1data.Actual=SA1data.Actual.astype("int32")
 SA1data.Projected=SA1data.Projected.astype("int32")
 SA1data.SA1=SA1data.SA1.astype("int64")

@@ -25,13 +25,12 @@ Edit mode:
 * Click the **SA1** button to move to SA2/3/4. For example, if SA3 is selected, clicking an SA1 will add/remove all other SA1s in that SA3.
 * Select the **Lock SA1s** checkbox to lock SA1s that are already allocated to a different division.
 * The dropdown menu is highlighted according to the population in each division. A division name will remain red until both current and projected populations are within the required tolerances. It then becomes green.
-* The **Remaining divisions** section contains information about divisions that are outside the required tolerances. It DOES NOT refresh automatically when you edit the division. It will only refresh when you click **Refresh this data** or the dropdown menu. Monitor this to ensure you don't draw too many divisions under or over.
+* There is information about divisions that are outside the required tolerances. It DOES NOT refresh automatically, only when you click **Refresh this data** or the dropdown menu. Monitor this to ensure you don't draw too many divisions under or over.
 
 
 Using this tool for other states/territories:
 * Install Python, if you don't have it already.	
-* You will need the SA1 shapefile for the state/territory you are drawing. You may also want to display state districts, current divisions or LGAs. I have created compressed and non-compressed versions of each file, and you can find them at this link: https://drive.google.com/drive/folders/1ml4ganrZFcE4lVtFHDeJRpPdG6cSjEbS?usp=sharing
-* You can also select other files in GeoJSON format.
-* You also need the enrolment data from the AEC. Of the two Excel files available, pick the one that does NOT end with "by Division". There is no need to convert to .csv format.
-* Run the batch file ``switchStates.bat``. It will ensure **numpy** and **openpyxl** are installed. Then, you need to select the file containing enrolment data. It will ask you to identify which columns contain SA1 codes and population estimates, then ask how many divisions you are drawing.
-* The program will create one file (``allocations.js``). You can then open ``redist.html``.
+* You will need the SA1 shapefile for the state/territory you are drawing. You may also want to display state districts, current divisions or LGAs. I have created compressed and non-compressed versions of each file, and you can find them at this link: https://drive.google.com/drive/folders/1ml4ganrZFcE4lVtFHDeJRpPdG6cSjEbS?usp=sharing. You can also select other files in GeoJSON format.
+* You also need the enrolment data from the AEC. Of the two Excel files available, download the one that does NOT end with "by Division". There is no need to convert to .csv format.
+* Run the batch file ``switchStates.bat``. It will ensure **numpy** and **openpyxl** are installed. Then, select the enrolment data file. It will ask you to identify which columns contain SA1 codes and population estimates, and how many divisions you are drawing.
+* The program will create two files (``populations.js`` and ``allocations.js``). You can then open ``redist.html``.

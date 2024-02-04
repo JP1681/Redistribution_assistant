@@ -16,6 +16,7 @@
 
 	<!-- Population data -->
 	<script src="allocations.js"></script>
+	<script src="populations.js"></script>
 
 	<style>
 		html, body {height: 100%; margin: 0;}
@@ -91,17 +92,17 @@
 		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 	}).addTo(map);
 
-	let SA1Array = Object.keys(allocations["Actual"]);
+	let SA1Array = Object.keys(populations["Actual"]);
 	let SA1IDmap = {};
 	let divisionIDmap={};
 	SA1Q = function(num){
 		return SA1Layer.getLayer(SA1IDmap[num]);
 	}
-	let extCurrent = allocations["CurrentExtreme"]; //min, max
-	let extProj = allocations["ProjectedExtreme"];
-	let extGrowth = allocations["ChangeExtreme"];
-	let currentPopulation = parseInt(allocations["Totals"][0]);
-	let projPopulation = parseInt(allocations["Totals"][1]);
+	let extCurrent = populations["CurrentExtreme"]; //min, max
+	let extProj = populations["ProjectedExtreme"];
+	let extGrowth = populations["ChangeExtreme"];
+	let currentPopulation = parseInt(populations["Totals"][0]);
+	let projPopulation = parseInt(populations["Totals"][1]);
 
 	let nDivisions = Object.keys(allocations["Names"]).length;
 	let currentQuota = Math.round(currentPopulation/nDivisions);
@@ -195,9 +196,9 @@
 				SA1Layer.eachLayer(function (layer){
 					layerName = layer["feature"]["properties"]["SA1_CODE21"];
 					layer.bindTooltip(layerName+": "+
-						String(allocations["Actual"][layerName])+" → "+
-						String(allocations["Projected"][layerName])+" ("+
-						+String(Math.round(allocations["Change"][layerName]*10000)/100)+"%)")
+						String(populations["Actual"][layerName])+" → "+
+						String(populations["Projected"][layerName])+" ("+
+						+String(Math.round(populations["Change"][layerName]*10000)/100)+"%)")
 				});
 				let viewDiv = document.getElementById("viewOnly");
 				let loadFileDiv = document.getElementById("pickSA1");
@@ -324,8 +325,8 @@
 		for (let i=0;i<SA1Array.length;i++){
 			let s = SA1Array[i];
 			if (allocations["Division"][s]==selectedDiv){
-				cT += allocations["Actual"][s];
-				pT += allocations["Projected"][s];
+				cT += populations["Actual"][s];
+				pT += populations["Projected"][s];
 			}
 		}
 		displayPopulation(cT,pT);
@@ -337,8 +338,8 @@
 			let SA1ID = SA1Array[i];
 			let divID = allocations["Division"][SA1ID];
 			if (divID != -1){
-				currPopArray[divID] = currPopArray[divID] + allocations["Actual"][SA1ID];
-				projPopArray[divID] = projPopArray[divID] + allocations["Projected"][SA1ID];
+				currPopArray[divID] = currPopArray[divID] + populations["Actual"][SA1ID];
+				projPopArray[divID] = projPopArray[divID] + populations["Projected"][SA1ID];
 			}
 		};
 		let quotaValid = false;
@@ -436,13 +437,13 @@
 			SA1Layer.eachLayer(function (layer){
 				n = layer["feature"]["properties"]["SA1_CODE21"];
 				if (heatmapIndex==1){
-					layer.setStyle({color:heatmapColour(extCurrent,Math.log10(allocations["Actual"][n]+1),[255,0,0],[0,255,0])})
+					layer.setStyle({color:heatmapColour(extCurrent,Math.log10(populations["Actual"][n]+1),[255,0,0],[0,255,0])})
 				}
 				else if (heatmapIndex==2){
-					layer.setStyle({color:heatmapColour(extProj,Math.log10(allocations["Projected"][n]+1),[255,0,0],[0,255,0])})
+					layer.setStyle({color:heatmapColour(extProj,Math.log10(populations["Projected"][n]+1),[255,0,0],[0,255,0])})
 				}
 				else if (heatmapIndex==3){
-					layer.setStyle({color:heatmapColour(extGrowth,allocations["Change"][n],[255,0,0],[0,255,0])})
+					layer.setStyle({color:heatmapColour(extGrowth,populations["Change"][n],[255,0,0],[0,255,0])})
 				}
 			})
 		}

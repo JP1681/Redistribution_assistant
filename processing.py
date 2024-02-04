@@ -64,8 +64,10 @@ populationData = populationData.groupby("SA1").sum()
 populationData["Change"]=populationData["Projected"]/populationData["Actual"]-1
 populationData["Change"]=populationData["Change"].fillna(0)
 populationData["Change"].replace(np.inf,0,inplace=True)
-populationData["Division"]=-1
-populationData.Division = populationData.Division.astype("int32")
+allocationData = pd.DataFrame(index=populationData.index)
+allocationData["Division"]=-1
+allocationData.Division = allocationData.Division.astype("int32")
+allocationData = json.loads(allocationData.to_json())
 
 actualExt = [math.log10(populationData["Actual"].min()+1),math.log10(populationData["Actual"].max()+1)]
 projectedExt = [math.log10(populationData["Projected"].min()+1),math.log10(populationData["Projected"].max()+1)]
@@ -90,9 +92,13 @@ while inputValid==False:
     except:
         print("Try again. Enter an integer greater than 1.")
 seatNames = dict(zip(range(num_seats),['']*num_seats))
-populationData["Names"]=seatNames
+allocationData["Names"]=seatNames
 
-outjs="var allocations = "+json.dumps(populationData)
+outjs="var populations = "+json.dumps(populationData)
+with open(dir_name+"\\populations.js","w") as file:
+    file.write(outjs)
+
+outjs="var allocations = "+json.dumps(allocationData)
 with open(dir_name+"\\allocations.js","w") as file:
     file.write(outjs)
 

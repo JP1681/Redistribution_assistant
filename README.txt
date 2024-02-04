@@ -40,7 +40,7 @@ Edit mode:
 Using this tool for other states/territories:
 	Install Python, if you don't have it already.
 	
-	You will need the SA1 shapefile for the state/territory you are drawing. You may also want to display state districts, current divisions or LGAs. I have created compressed and non-compressed versions of each file, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
+	You will need the SA1 shapefile for the state/territory you are drawing. You may also want to display state districts, current divisions or LGAs. I have created compressed and non-compressed versions of each file, and you can find them at this link: https://drive.google.com/drive/folders/1ml4ganrZFcE4lVtFHDeJRpPdG6cSjEbS?usp=sharing
 	You can select other files too, as long as they are in GeoJSON format with the .json extension.
 
 	You also need the enrolment data from the AEC. Of the two Excel files available, pick the one that does NOT end with "by Division". There is no need to convert to .csv format.

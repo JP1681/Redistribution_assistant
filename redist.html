@@ -9,15 +9,13 @@
 	<!-- Leaflet imports -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	
+	<!-- Coloris imports-->
+	<link rel="stylesheet" href="coloris.min.css"/>
+	<script src="coloris.min.js"></script>
 
 	<!-- Population data -->
 	<script src="allocations.js"></script>
-
-	<!-- Boundary data -->
-	<script src="shapefiles/divisionBoundaries.js" ></script> 
-	<script src="shapefiles/SA1Boundaries.js"></script>
-	<script src="shapefiles/districtBoundaries.js"></script>
-	<script src="shapefiles/LGABoundaries.js"></script>
 
 	<style>
 		html, body {height: 100%; margin: 0;}
@@ -26,33 +24,37 @@
 
 </head>
 <body>
-<div style="width: 20%; height:100%; float:left">
-	<button title="Switch between view mode and edit mode" id="modeChange" onclick="changeMode()">Go to edit mode</button>
-	<br><br>
-	<div id="viewOnly">
+<div style="width: 25%; height:100%; float:left">
+	<div id="menuButton" hidden>
+		<button title="Switch between view mode and edit mode" id="modeChange" onclick="changeMode()">Go to edit mode</button>
+	</div>
+	<br>
+	<div id="pickSA1">
+		<label for="pickSA1Files">Add the SA1 shapefile</label><input type="file" id="pickSA1Files" onchange="pickSA1Files()"></input>
+	</div>
+	<div id="viewOnly" hidden>
 		<select title="View a proposed division" id="viewDivisionName" onchange="loadViewDivision()"></select>
-		<br><br>
+		<br>
 		<button title="Show population heatmap: current, projected and growth" id="showHeatmap" onclick="nextHeatmap()">Heatmap: None</button>
-		<br><br>
-		<button title="Click the download link, then find the existing allocations.js file and overwrite it." id="saveButton" onclick="saveAllocationJS()">Save progress</button>
+		<br>
+		<button title="Click the button, then the download link, then find the existing allocations.js file and overwrite it." id="saveButton" onclick="saveAllocationJS()">Save progress</button>
 		<a download="allocations.js" id="downloadJSlink" title="Make sure you have pressed the Save button" href="">Download</a>
-		<br><br>
-		<button title="Click the download link, then save the file." id="allocationReport" onclick="saveAllocationCSV()">Generate allocation .csv</button>
+		<br>
+		<button title="Click the button, then the download link, then save the file." id="allocationReport" onclick="saveAllocationCSV()">Generate allocation .csv</button>
 		<br>
 		<a download="allocations.csv" id="downloadCSVlink" title="Make sure you have pressed the Generate button" href="">Download</a>
-		</div>
+	</div>
 	<div id="editOnly" hidden>
 		<label for="divisionName">Division:</label>
 		<select id="divisionName" onchange="loadEditDivision()" onfocus="refreshQuotaValidity()"></select>
 		<input id="divNameTB" type="text"><button id="updateDivName" onclick="changeDivisionName()">Change name</button>
-		<br><br>
+		<br>
 		<button title="Add/remove by SA1/2/3/4" id="switchSALevel" onclick="changeSALevel()">SA1</button><input type="checkBox" id="lockSA1s" checked>Lock SA1s that are already allocated</input>
-		<br><br>
+		<br>
 		<b id="currDivPop">Current: 0/0 (0%)</b>
-		<br><br>
+		<br>
 		<b id="projDivPop">Projected: 0/0 (0%)</b>
-		<br><br>
-		<b>Remaining divisions</b><br>
+		<br>
 		<p id="quota1">There are 0 divisions outside the required tolerances. There are 0 current electors and 0 projected electors to be split between them.</p>
 		<p id="quota2">This is an average of 0 (current) and 0 (projected) electors per division.</p>
 		<p id="quota3">This differs from the quotas by 0% (current) and 0% (projected).</p>
@@ -60,55 +62,40 @@
 	</div>
 	<div id="toggleBoundaries">
 		<br>
-		<input type="checkbox" id="showDivisions" onchange="toggleBoundary('showDivisions')"></input><label for="showDivisions" style="background-color: #AFAFFF">Show current divisions</label>
+		<label for="pickFiles">Add non-SA1 shapefiles</label><input type="file" id="pickFiles" onchange="newBoundaryFiles()" multiple></input>
 		<br>
-		<input type="checkbox" id="showLGAs" onchange="toggleBoundary('showLGAs')"></input><label for="showLGAs" style="background-color: #FFFFAF">Show local government areas</label>
+		<p>Click on a file name to change its colour.</p>
+		<input id="colorPicker" type="text" data-coloris hidden></input>
 		<br>
-		<input type="checkbox" id="showDistricts" onchange="toggleBoundary('showDistricts')"></input><label for="showDistricts" style="background-color: #FFAFFF">Show state districts</label>
 	</div>
 </div>
-<div id="map" style="width: 80%; height: 100%;"></div>
+<div id="map" style="width: 75%; height: 100%;"></div>
 
 <script>
+	var nonSA1Boundaries = {};
+	boundaryFileCount = 0;
+	colorUse = ["nonSA1",-1];
+
 	rgb = function(values) {
 		return 'rgb(' + values.join(", ") + ")";
-	}
+	};
 	let defaultSA1Col = rgb([0,0,0]);
 	let allocatedSA1Col = rgb([255,0,0]);
-	let defaultDivisionCol = rgb([0,0,255]);
-	let defaultLGACol = rgb([255,255,0]);
-	let defaultDistrictCol = rgb([255,0,255]);
+	let defaultLayerCol = rgb([255,0,255]);
 	const map = L.map('map').setView([-27, 134], 4);
 
 	let SA1Style = {"color":defaultSA1Col,"weight":1,"opacity":1,"fillOpacity":0.3};
-	let divisionStyle = {"color":defaultDivisionCol,"weight":4,"opacity":0.5,"fillOpacity":0};
-	let LGAStyle = {"color":defaultLGACol,"weight":4,"opacity":0.5,"fillOpacity":0};
-	let districtStyle = {"color":defaultDistrictCol,"weight":4,"opacity":0.5,"fillOpacity":0};
-	let hiddenStyle = {"opacity":0,"fillOpacity":0};
 
 	const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 		maxZoom: 19,
 		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 	}).addTo(map);
 
-	let districtLayer = new L.GeoJSON(districtBoundaries,{style:districtStyle});
-	districtLayer.addTo(map);
-	let LGALayer = new L.GeoJSON(LGABoundaries,{style:LGAStyle});
-	LGALayer.addTo(map);
-	let divisionLayer = new L.GeoJSON(divisionBoundaries,{style:divisionStyle});
-	divisionLayer.addTo(map);
-	let SA1Layer = new L.GeoJSON(SA1Boundaries,{style:SA1Style});
-	SA1Layer.addTo(map);
-
-
 	let SA1Array = Object.keys(allocations["Actual"]);
 	let SA1IDmap = {};
 	let divisionIDmap={};
 	SA1Q = function(num){
 		return SA1Layer.getLayer(SA1IDmap[num]);
-	}
-	divQ = function(divName){
-		return divisionLayer.getLayer(divisionIDmap[divName]);
 	}
 	let extCurrent = allocations["CurrentExtreme"]; //min, max
 	let extProj = allocations["ProjectedExtreme"];
@@ -123,16 +110,6 @@
 	let projTolerance = 0.035;
 	let lastEditedDiv = 0;
 
-	divisionLayer.eachLayer(function (layer){
-			divisionIDmap[layer["feature"]["properties"]["CED_NAME21"].toUpperCase()]=divisionLayer.getLayerId(layer);
-	});
-	SA1Layer.eachLayer(function (layer){
-			SA1IDmap[layer["feature"]["properties"]["SA1_CODE21"]]=SA1Layer.getLayerId(layer);
-	});
-
-
-	SA1Layer.on("click", function(l){onLayerClick(l.layer)});
-	SA1Layer.on("contextmenu",function(l){onLayerDoubleClick(l.layer)});
 	currTotal = 0;
 	projTotal = 0;
 
@@ -182,29 +159,104 @@
 		option.text = optT;
 		VdivDD.add(option);
 	};
+	
+	document.getElementById("colorPicker").addEventListener('input', event => {
+		pickColour(event.target.value.substring(0,7));
+	});
 
-	SA1Layer.eachLayer(function (layer){
-			layerName = layer["feature"]["properties"]["SA1_CODE21"];
-			layer.bindTooltip("ID: "+layerName+
-				" Current: "+String(allocations["Actual"][layerName])+
-				" Projected: "+String(allocations["Projected"][layerName])+
-				" Growth: "+String(Math.round(allocations["Change"][layerName]*10000)/100)+"%")
-		});
-	let toggleLayerMapping = {"showDivisions":divisionLayer, "showLGAs":LGALayer,"showDistricts":districtLayer};
-	let toggleStyleMapping = {"showDivisions":divisionStyle,"showLGAs":LGAStyle,"showDistricts":districtStyle};
-	let toggleLayerKeys = Object.keys(toggleLayerMapping);
-	for (i=0;i<toggleLayerKeys.length;i++){
-		document.getElementById(toggleLayerKeys[i]).checked = true;
+	document.getElementById("colorPicker").addEventListener('close', event => {
+		document.getElementById("colorPicker").style.display = "none";
+	});
+
+	pickColour = function(col){
+		if (colorUse[0] == "nonSA1"){
+			nonSA1Boundaries[String(colorUse[1])]["data"].eachLayer(function (layer){layer.setStyle({color:col})});
+			let label = document.getElementById("bTLabel"+String(colorUse[1]));
+			label.style = "background-color: "+col;
+		}
+	}
+	
+	pickSA1Files = function(){
+		var input = document.getElementById("pickSA1Files");
+		var file = input.files[0];
+		var reader = new FileReader();
+		reader.readAsText(file,"UTF-8");
+		reader.onload = (function(f) {
+			return function(e){
+				var SA1Boundaries = JSON.parse(e.target.result);
+				SA1Layer = new L.GeoJSON(SA1Boundaries,{style:SA1Style});
+				SA1Layer.addTo(map);
+				SA1Layer.eachLayer(function (layer){
+						SA1IDmap[layer["feature"]["properties"]["SA1_CODE21"]]=SA1Layer.getLayerId(layer);
+				});
+
+				SA1Layer.on("click", function(l){onLayerClick(l.layer)});
+				SA1Layer.on("contextmenu",function(l){onLayerDoubleClick(l.layer)});
+				SA1Layer.eachLayer(function (layer){
+					layerName = layer["feature"]["properties"]["SA1_CODE21"];
+					layer.bindTooltip(layerName+": "+
+						String(allocations["Actual"][layerName])+" → "+
+						String(allocations["Projected"][layerName])+" ("+
+						+String(Math.round(allocations["Change"][layerName]*10000)/100)+"%)")
+				});
+				let viewDiv = document.getElementById("viewOnly");
+				let loadFileDiv = document.getElementById("pickSA1");
+				let buttonDiv = document.getElementById("menuButton");
+				viewDiv.style.display="block";
+				loadFileDiv.style.display="none";
+				buttonDiv.style.display="block";
+			};
+		})(file);
+	};
+
+	newBoundaryFiles = function(){
+		var input = document.getElementById("pickFiles");
+		var boundaryDiv = document.getElementById("toggleBoundaries");
+		for (let i = 0; i<input.files.length; i++){
+			var file = input.files[i];
+			var reader = new FileReader();
+			reader.readAsText(file,'UTF-8');
+			reader.onload = (function(f) {
+				return function(e) {
+					var content = e.target.result;
+					let newColor = "#AFFFAF";
+					let defaultLayerStyle = {"color":newColor,"weight":4,"opacity":0.5,"fillOpacity":0};
+					let newLayer = new L.GeoJSON(JSON.parse(content),{style:defaultLayerStyle});
+					newLayer.addTo(map);
+					newLayer.bringToBack();
+					nonSA1Boundaries[String(boundaryFileCount)]={"name":f,"data":newLayer,"color":newColor};
+					var newToggle = document.createElement("input");
+					newToggle.type = "checkbox";
+					newToggle.id = "bT"+String(boundaryFileCount);
+					let j = boundaryFileCount;
+					newToggle.onchange = function(){toggleBoundary(j)};
+					newToggle.checked = true;
+					var newToggleLabel = document.createElement("label");
+					newToggleLabel.id = "bTLabel"+String(boundaryFileCount);
+					newToggleLabel.for = "bT"+String(boundaryFileCount);
+					newToggleLabel.style = "background-color: "+newColor;
+					newToggleLabel.textContent = f.name;
+					newToggleLabel.onclick = function(){chooseBoundaryColor(j)};
+					boundaryDiv.appendChild(newToggle);
+					boundaryDiv.appendChild(newToggleLabel);
+					boundaryDiv.appendChild(document.createElement("br"));
+					boundaryFileCount++;
+					return null;
+				};
+			})(file);
+		}
 	};
 	toggleBoundary = function(buttonName){
-		box = document.getElementById(buttonName);
-		layerOn = box.checked;
-		if (layerOn){
-			toggleLayerMapping[buttonName].eachLayer(function (layer){layer.setStyle(toggleStyleMapping[buttonName])});
+		box = document.getElementById("bT"+buttonName);
+		var newOpacity = 0;
+		if (box.checked===true){
+			newOpacity = 0.5;
 		}
-		else {
-			toggleLayerMapping[buttonName].eachLayer(function (layer){layer.setStyle(hiddenStyle)});
-		}
+		nonSA1Boundaries[buttonName]["data"].eachLayer(function (layer){layer.setStyle({opacity:newOpacity})});
+	};
+	chooseBoundaryColor = function(buttonName){
+		document.getElementById("colorPicker").style.display="block";
+		colorUse = ["nonSA1",buttonName];
 	};
 	onLayerClick = function(layer){
 		if (modeIndex == 1){

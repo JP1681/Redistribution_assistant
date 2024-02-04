@@ -2,6 +2,9 @@ This tool is designed to assist with drawing boundaries for federal redistributi
 It is currently set up for the 2023 redistribution of Victoria into 38 divisions.
 If you want to use this tool for drawing boundaries in Victoria, just open redist.html. Otherwise, there are instructions to modify the setup at the end of this file.
 
+Once you open redist.html, use the file selection tools to pick the boundary files. The SA1 shapefile must be added using the first 'Browse' button. Other boundary files can be added using the second 'Browse' button.
+For these other files, you can click their name to select a display colour.
+
 View mode:
 	Use the dropdown menu to highlight each division that you have proposed.
 
@@ -31,17 +34,16 @@ Edit mode:
 
 	The dropdown menu is highlighted according to the population in each division. A division name will remain red until both current and projected populations are within the required tolerances, when it will become green.
 
-	The Remaining divisions section contains information about divisions that are outside the required tolerances. It DOES NOT refresh automatically when you edit the division. It will only refresh when you click the Refresh this data button, or if you click on the dropdown menu. Monitor this data to ensure you don't draw too many divisions under or over.
+	The Remaining divisions section contains information about divisions that are outside the required tolerances. It DOES NOT refresh automatically when you edit the division. It will only refresh when you click the Refresh this data button or the dropdown menu. Monitor this to ensure you don't draw too many divisions under or over.
 
 
 Using this tool for other states/territories:
 	Install Python, if you don't have it already.
-
-	Shapefiles for state districts, current divisions, SA1s and LGAs are needed. I have created compressed and non-compressed versions of these in the required format, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
+	
+	You will need the SA1 shapefile for the state/territory you are drawing. You may also want to display state districts, current divisions or LGAs. I have created compressed and non-compressed versions of each file, and you can find them at this link: https://drive.google.com/drive/folders/1VpdPAenFMvrSHnL26kkZiUetMWNbmTgV?usp=sharing
+	You can select other files too, as long as they are in GeoJSON format with the .json extension.
 
 	You also need the enrolment data from the AEC. Of the two Excel files available, pick the one that does NOT end with "by Division". There is no need to convert to .csv format.
-	
-	Select the boundary files you want to use, and save them in the shapefiles folder.
 
 	Run the batch file switchStates.bat. It will ensure numpy and openpyxl are installed. Then, you need to select the file containing enrolment data. It will ask you to identify which columns contain SA1 codes and population estimates, then ask how many divisions you are drawing.
 	The program will create one file (allocations.js). You can then open redist.html.

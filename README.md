@@ -15,7 +15,7 @@ View mode
 * Use the checkboxes to toggle other boundaries on and off.
 
 Edit mode:
-* Use the dropdown menu to select a division to edit. You can edit the name in the textbox, then press ``Enter`` or click the **Change name** button.
+* Use the dropdown menu to select a division to edit. You can edit the name in the textbox, then press ``Enter``.
 * SA1s are coloured as follows:
     * Current division: green
 	* Different division: red

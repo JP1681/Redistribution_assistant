@@ -48,7 +48,9 @@
 	<div id="editOnly" hidden>
 		<label for="divisionName">Division:</label>
 		<select id="divisionName" onchange="loadEditDivision()" onfocus="refreshQuotaValidity()"></select>
-		<input id="divNameTB" type="text"><button id="updateDivName" onclick="changeDivisionName()">Change name</button>
+		<input id="divNameTB" type="text">
+		<button title="Click to change the display colour of this division." onclick="chooseDivisionColor()">Change colour</button>
+		<input id="colorPickerDivision" type="text" data-coloris hidden></input>
 		<br>
 		<button title="Add/remove by SA1/2/3/4" id="switchSALevel" onclick="changeSALevel()">SA1</button><input type="checkBox" id="lockSA1s" checked>Lock SA1s that are already allocated</input>
 		<br>
@@ -66,7 +68,7 @@
 		<label for="pickFiles">Add non-SA1 shapefiles</label><input type="file" id="pickFiles" onchange="newBoundaryFiles()" multiple></input>
 		<br>
 		<p>Click on a file name to change its colour.</p>
-		<input id="colorPicker" type="text" data-coloris hidden></input>
+		<input id="colorPickerBoundary" type="text" data-coloris hidden></input>
 		<br>
 	</div>
 </div>
@@ -76,6 +78,7 @@
 	var nonSA1Boundaries = {};
 	boundaryFileCount = 0;
 	colorUse = ["nonSA1",-1];
+	Coloris({swatches:["#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF","#00FFFF"]});
 
 	rgb = function(values) {
 		return 'rgb(' + values.join(", ") + ")";
@@ -161,19 +164,29 @@
 		VdivDD.add(option);
 	};
 	
-	document.getElementById("colorPicker").addEventListener('input', event => {
+	document.getElementById("colorPickerBoundary").addEventListener('input', event => {
 		pickColour(event.target.value.substring(0,7));
 	});
 
-	document.getElementById("colorPicker").addEventListener('close', event => {
-		document.getElementById("colorPicker").style.display = "none";
+	document.getElementById("colorPickerBoundary").addEventListener('close', event => {
+		document.getElementById("colorPickerBoundary").style.display = "none";
 	});
 
+	document.getElementById("colorPickerDivision").addEventListener('input', event => {
+		pickColour(event.target.value.substring(0,7));
+	});
+
+	document.getElementById("colorPickerDivision").addEventListener('close', event => {
+		document.getElementById("colorPickerDivision").style.display = "none";
+	});
 	pickColour = function(col){
 		if (colorUse[0] == "nonSA1"){
 			nonSA1Boundaries[String(colorUse[1])]["data"].eachLayer(function (layer){layer.setStyle({color:col})});
 			let label = document.getElementById("bTLabel"+String(colorUse[1]));
 			label.style = "background-color: "+col;
+		}
+		else if (colorUse[0] == "division"){
+			allocations["Colours"][String(colorUse[1])]=col;
 		}
 	}
 	
@@ -206,6 +219,7 @@
 				viewDiv.style.display="block";
 				loadFileDiv.style.display="none";
 				buttonDiv.style.display="block";
+				resetView();
 			};
 		})(file);
 	};
@@ -256,9 +270,15 @@
 		nonSA1Boundaries[buttonName]["data"].eachLayer(function (layer){layer.setStyle({opacity:newOpacity})});
 	};
 	chooseBoundaryColor = function(buttonName){
-		document.getElementById("colorPicker").style.display="block";
+		document.getElementById("colorPickerBoundary").style.display="block";
 		colorUse = ["nonSA1",buttonName];
 	};
+	chooseDivisionColor = function(){
+		divDD = document.getElementById("divisionName");
+		selectedDiv = divDD.value;
+		document.getElementById("colorPickerDivision").style.display="block";
+		colorUse = ["division",selectedDiv];
+	}
 	onLayerClick = function(layer){
 		if (modeIndex == 1){
 			let lockTrue = document.getElementById("lockSA1s").checked;
@@ -421,7 +441,15 @@
 		return rgb(colMin);
 	};
 	resetView = function(){
-		SA1Layer.eachLayer(function(layer){layer.setStyle(SA1Style)})
+		SA1Layer.eachLayer(function(layer){
+			let id = layer["feature"]["properties"]["SA1_CODE21"];
+			let division = allocations["Division"][id];
+			layer.setStyle(SA1Style);
+			if (division!=-1) {
+				col = allocations["Colours"][division];
+				layer.setStyle({color:col});
+			}
+		})
 	};
 	nextHeatmap = function (){
 		heatmapIndex = (heatmapIndex + 1) % 4;

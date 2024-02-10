@@ -160,6 +160,10 @@
 	option.value = -1;
 	option.text = "None";
 	VdivDD.add(option);
+	option = document.createElement("option");
+	option.value = -2;
+	option.text = "Unallocated SA1s";
+	VdivDD.add(option);
 	for (let i=0; i<nDivisions; i++){
 		optT = String(i)+": "+allocations["Names"][String(i)];
 		option = document.createElement("option");
@@ -272,8 +276,6 @@
 				}
 			}
 		});
-		console.log(existsList);
-		console.log(northList,southList,eastList,westList);
 	};
 
 	newBoundaryFiles = function(){
@@ -580,10 +582,17 @@
 				if (allocations["Division"][s]==selectedDiv){
 					SA1Q(s).setStyle({fillOpacity:0,opacity:0.3});
 				}
-			})
+			});
 			if (existsList[selectedDiv]){
 				map.fitBounds([[northList[selectedDiv],eastList[selectedDiv]],[southList[selectedDiv],westList[selectedDiv]]]);
 			}
+		} else if (selectedDiv == -2){
+			SA1Layer.eachLayer(function (layer){
+				let s = layer["feature"]["properties"]["SA1_CODE21"];
+				if (allocations["Division"][s]!=-1){
+					SA1Q(s).setStyle({fillOpacity:0,opacity:0});
+				}
+			})
 		}
 	};
 	changeSALevel = function(){

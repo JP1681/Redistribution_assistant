@@ -1,5 +1,5 @@
 This tool is designed to assist with drawing boundaries for federal redistributions.
-If you want to use this tool for the 2023 redistribution in Victoria, just open redist.html. 
+If you want to use this tool for the 2023 redistribution in Victoria, just open redist.html.
 **Note:** the default enrolment data is the newest version (published January 2024). The original data (published October 2023) contained errors.
 
 There are instructions for drawing other states/territories at the end of this file.
@@ -13,6 +13,7 @@ View mode
 * Use the **Save progress** button to generate a .js file containing the divisions and names you have proposed so far. Once you press the button, click the download link. You should overwrite the existing ``allocations.js`` file in the directory.
 * Use the **Generate allocation.csv** button to download a .csv file containing each SA1 code, and its allocated division.
 * Use the checkboxes to toggle other boundaries on and off.
+* Use the **Get image** button in the top right corner of the map to save a copy of the current view. **Note that the scale parameter does not behave as expected, so it is recommended that you only use a scale of 1. I plan to fix this in a future version.**
 
 Edit mode:
 * Use the dropdown menu to select a division to edit. You can edit the name in the textbox, then press ``Enter``.

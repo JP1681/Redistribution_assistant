@@ -18,6 +18,9 @@
 	<script src="allocations.js"></script>
 	<script src="populations.js"></script>
 
+	<link rel="stylesheet" href="Leaflet.BigImage.min.css">
+	<script src="Leaflet.BigImage.min.js"></script>
+
 	<style>
 		html, body {height: 100%; margin: 0;}
 		.leaflet-container {height: 600px;width: 800px;max-width: 100%;max-height: 100%;}
@@ -86,7 +89,7 @@
 	let defaultSA1Col = rgb([0,0,0]);
 	let allocatedSA1Col = rgb([255,0,0]);
 	let defaultLayerCol = rgb([255,0,255]);
-	const map = L.map('map').setView([-27, 134], 4);
+	const map = L.map('map',{zoomSnap:1}).setView([-27, 134], 4);
 
 	let SA1Style = {"color":defaultSA1Col,"weight":1,"opacity":1,"fillOpacity":0.3};
 
@@ -94,6 +97,7 @@
 		maxZoom: 19,
 		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 	}).addTo(map);
+	L.control.bigImage({position: 'topright'}).addTo(map);
 
 	let SA1Array = Object.keys(populations["Actual"]);
 	let SA1IDmap = {};
@@ -220,8 +224,55 @@
 				loadFileDiv.style.display="none";
 				buttonDiv.style.display="block";
 				resetView();
+				divisionExtremities();
 			};
 		})(file);
+	};
+
+	divisionExtremities = function(){
+		existsList = Array(nDivisions).fill(false);
+		northList = Array(nDivisions).fill(-90);
+		southList = Array(nDivisions).fill(90);
+		eastList = Array(nDivisions).fill(-180);
+		westList = Array(nDivisions).fill(180);
+		SA1Layer.eachLayer(function(layer){
+			var id = allocations["Division"][layer["feature"]["properties"]["SA1_CODE21"]];
+			if (id != -1){
+				if (Object.hasOwn(layer,'_bounds')){
+					var b = layer._bounds;			
+					existsList[id] = true;
+					let ne = b._northEast;
+					let sw = b._southWest;
+					let n = ne.lat;
+					let s = sw.lat;
+					let e = ne.lng;
+					let w = sw.lng;
+					northList[id] = Math.max(northList[id],n);
+					southList[id] = Math.min(southList[id],s);
+					eastList[id] = Math.max(eastList[id],e);
+					westList[id] = Math.min(westList[id],w);
+				} else {
+					var list = Object.keys(layer._layers);
+					for (let i=0; i<list.length; i++){
+						var o = layer._layers[list[i]];
+						var b = o._bounds;				
+						existsList[id] = true;
+						let ne = b._northEast;
+						let sw = b._southWest;
+						let n = ne.lat;
+						let s = sw.lat;
+						let e = ne.lng;
+						let w = sw.lng;
+						northList[id] = Math.max(northList[id],n);
+						southList[id] = Math.min(southList[id],s);
+						eastList[id] = Math.max(eastList[id],e);
+						westList[id] = Math.min(westList[id],w);
+					}
+				}
+			}
+		});
+		console.log(existsList);
+		console.log(northList,southList,eastList,westList);
 	};
 
 	newBoundaryFiles = function(){
@@ -486,6 +537,7 @@
 		nextHeatmap();
 		if (modeIndex == 0){
 			editDiv.style.display="none";viewDiv.style.display="block";
+			divisionExtremities();
 		}
 		else if (modeIndex == 1){
 			viewDiv.style.display="none";editDiv.style.display="block";
@@ -528,6 +580,9 @@
 					SA1Q(s).setStyle({fillOpacity:0,opacity:0.3});
 				}
 			})
+			if (existsList[selectedDiv]){
+				map.fitBounds([[northList[selectedDiv],eastList[selectedDiv]],[southList[selectedDiv],westList[selectedDiv]]]);
+			}
 		}
 	};
 	changeSALevel = function(){

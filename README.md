@@ -25,9 +25,9 @@ Edit mode:
 	* Different division: red
 	* Not yet allocated: black
 * Group names and populations are coloured as follows:
-	* Outside either tolerance: red
-	* Inside both tolerances but group contains more than one division: yellow
-	* Inside both tolerances and group contains exactly one division: green
+	* Outside tolerance: red
+	* Inside tolerance but group contains more than one division: yellow
+	* Inside tolerance and group contains exactly one division: green
 * Groups that contain more than one division appear in italics.
 * To move to another group, either use the dropdown menu or right-click on an SA1 in a different group.
 * You can add/remove SA1s to/from a group by left-clicking on them. The current and projected populations will update automatically.

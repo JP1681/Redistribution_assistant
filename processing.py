@@ -93,8 +93,10 @@ while inputValid==False:
         print("Try again. Enter an integer greater than 1.")
 seatNames = dict(zip(range(num_seats),['']*num_seats))
 colours = dict(zip(range(num_seats),['#000000']*num_seats))
+numbers = dict(zip(range(num_seats),[1]*num_seats))
 allocationData["Names"]=seatNames
 allocationData["Colours"]=colours
+allocationData["Numbers"]=numbers
 
 outjs="var populations = "+json.dumps(populationData)
 with open(dir_name+"\\populations.js","w") as file:

@@ -27,7 +27,7 @@ for i in range(len(SA1data.columns)):
     print("Column "+str(i)+": "+SA1data.columns[i]+str(list(SA1data[SA1data.columns[i]].head())))
     print()
 print("Each column of the .csv file is shown above, along with the first few entries.")
-questionSuffixes = ["SA1 codes (10-digit numbers, possibly with .0)","current enrolment numbers","projected enrolment numbers"]
+questionSuffixes = ["SA1 codes (11-digit numbers, possibly with .0)","current enrolment numbers","projected enrolment numbers"]
 newColumnNames = ["SA1","Actual","Projected"]
 columnNumbers = []
 for i in range(len(questionSuffixes)):

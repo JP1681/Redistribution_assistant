@@ -1,4 +1,5 @@
-This tool is designed to assist with drawing boundaries for federal redistributions.
+This tool is designed to assist with drawing boundaries for federal redistributions. If you find any errors, or have a question/comment/suggestion, you're welcome to email me at jamespunch41@gmail.com.
+
 If you want to use this tool for the 2023 redistribution in Victoria, just open redist.html.
 **Note:** the default enrolment data is the newest version (published January 2024). The original data (published October 2023) contained errors.
 
